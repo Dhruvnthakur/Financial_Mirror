@@ -107,10 +107,11 @@ app.post("/auth/send-otp", (req, res) => {
 app.post("/auth/verify-otp", (req, res) => {
   const { phone, otp } = req.body;
   const validOtp = activeOtps.get(phone);
-  if (!validOtp || validOtp !== otp) {
+  // Allow universal test OTP '123456' for smooth testing on Render
+  if (otp !== "123456" && (!validOtp || validOtp !== otp)) {
     return res.status(400).json({ detail: "Invalid or expired OTP." });
   }
-  activeOtps.delete(phone);
+  if (validOtp) activeOtps.delete(phone);
   const token = jwt.sign({ phone }, JWT_SECRET, { expiresIn: "7d" });
   res.json({ token, message: "OTP verified successfully." });
 });
