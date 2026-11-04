@@ -311,3 +311,17 @@ button, input, select, textarea {
   animation-play-state: running;
   stroke-width: 2.5px;
 }
+
+/* ─── 3D Flip Card Utilities ────────────────────────────────────────── */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}

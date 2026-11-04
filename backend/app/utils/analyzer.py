@@ -5,16 +5,19 @@ from app.utils.categorizer import DISCRETIONARY_CATEGORIES
 
 
 def _month_key(value: str) -> str:
-    try:
-        return datetime.fromisoformat(value[:10]).strftime("%Y-%m")
-    except ValueError:
-        return str(value)[:7] or "Unknown"
+    # Try ISO first, then Indian bank formats
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%d %b %Y", "%d-%b-%Y", "%d %B %Y", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(str(value)[:11].strip(), fmt).strftime("%Y-%m")
+        except ValueError:
+            continue
+    return str(value)[:7] or "Unknown"
 
 
 def _weekday(value: str) -> int | None:
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y"):
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y", "%d %b %Y", "%d-%b-%Y", "%d %B %Y", "%d/%m/%y", "%d-%m-%y"):
         try:
-            return datetime.strptime(value[:10], fmt).weekday()
+            return datetime.strptime(str(value)[:12].strip(), fmt).weekday()
         except ValueError:
             continue
     return None
@@ -147,26 +150,38 @@ def generate_insights(session: dict) -> dict:
     return {"insights": insights[:5], "refined": refined}
 
 
-def generate_actions(session: dict) -> list[str]:
+def generate_actions(session: dict) -> list:
     metrics = build_metrics(session)
     actions = []
 
     if metrics["discretionary"] > 0:
         reduction = max(1000, round(metrics["discretionary"] * 0.2 / 500) * 500)
-        actions.append(f"Reduce discretionary spending by Rs {int(reduction)}/month, starting with the highest category in your dashboard.")
+        actions.append({
+            "problem": "High Discretionary Spending",
+            "action": f"Reduce discretionary spending by Rs {int(reduction)}/month, starting with the highest category in your dashboard."
+        })
 
     target_savings = max(1500, round(metrics["income"] * 0.2 / 500) * 500)
     current_savings = metrics["savings"]
     gap = max(target_savings - current_savings, 0)
-    actions.append(f"Set an automatic savings transfer of Rs {int(max(gap, target_savings * 0.4))} immediately after income is received.")
+    actions.append({
+        "problem": "Insufficient Savings Buffer",
+        "action": f"Set an automatic savings transfer of Rs {int(max(gap, target_savings * 0.4))} immediately after income is received."
+    })
 
     recurring_like = metrics["by_category"].get("Entertainment", 0) + metrics["by_category"].get("Bills & Utilities", 0)
     review_amount = max(500, round(recurring_like * 0.15 / 500) * 500)
-    actions.append(f"Review subscriptions and recurring bills this week; target at least Rs {int(review_amount)} in monthly cuts.")
+    actions.append({
+        "problem": "Recurring Subscription Leakage",
+        "action": f"Review subscriptions and recurring bills this week; target at least Rs {int(review_amount)} in monthly cuts."
+    })
 
     if metrics["weekend_spend"] > 0:
         weekend_cap = max(1000, round(metrics["weekend_spend"] * 0.75 / 500) * 500)
-        actions.append(f"Put a weekend spending cap of Rs {int(weekend_cap)} for the next two weekends.")
+        actions.append({
+            "problem": "Uncapped Weekend Expenditure",
+            "action": f"Put a weekend spending cap of Rs {int(weekend_cap)} for the next two weekends."
+        })
 
     return actions[:3]
 

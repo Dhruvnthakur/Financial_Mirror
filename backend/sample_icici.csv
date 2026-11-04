@@ -1,0 +1,11 @@
+Date,Description,Debit,Credit,Balance
+01-03-2026,Opening Balance,,,40000
+02-03-2026,Grocery,1500,,38500
+03-03-2026,Salary,,70000,108500
+04-03-2026,Electricity Bill,2000,,106500
+05-03-2026,Rent,20000,,86500
+06-03-2026,Fuel,2500,,84000
+07-03-2026,Netflix,649,,83351
+08-03-2026,Dining,1200,,82151
+09-03-2026,Amazon,3000,,79151
+10-03-2026,Mobile Recharge,399,,78752

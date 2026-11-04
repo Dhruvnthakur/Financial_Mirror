@@ -1,24 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "../api/client.js";
 
 export default function AuthPage({ onLogin, onBack }) {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState("signin"); // "signin" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
 
-  const handleMouseMove = (e) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
+  const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) return;
+    setError("");
+    if (!email || !password) return;
     setLoading(true);
-    setTimeout(() => {
-       setLoading(false);
-       onLogin();
-    }, 800);
+    try {
+      let resp;
+      if (mode === "signup") {
+        resp = await api.signUp(email, password, name);
+      } else {
+        resp = await api.signIn(email, password);
+      }
+      // Persist auth token
+      localStorage.setItem("financialMirrorAuthToken", resp.token);
+      localStorage.setItem("financialMirrorUserEmail", resp.email);
+      localStorage.setItem("financialMirrorUserName", resp.name);
+      localStorage.setItem("financialMirrorUserId", resp.user_id);
+      onLogin(resp.user_id);
+    } catch (err) {
+      setError(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,138 +43,134 @@ export default function AuthPage({ onLogin, onBack }) {
       style={{ background: "#050505" }}
       onMouseMove={handleMouseMove}
     >
-      {/* Background Glow */}
+      {/* Dynamic mouse glow */}
       <div
-         className="absolute pointer-events-none transition-opacity duration-500 will-change-transform z-0"
-         style={{
-            width: "800px",
-            height: "800px",
-            left: mousePos.x - 400,
-            top: mousePos.y - 400,
-            background: "radial-gradient(circle, rgba(138,43,226,0.18) 0%, rgba(8,12,255,0.06) 40%, rgba(0,0,0,0) 70%)",
-            filter: "blur(60px)",
-         }}
+        className="absolute pointer-events-none z-0"
+        style={{
+          width: "800px", height: "800px",
+          left: mousePos.x - 400, top: mousePos.y - 400,
+          background: "radial-gradient(circle, rgba(138,43,226,0.15) 0%, rgba(8,12,255,0.05) 40%, transparent 70%)",
+          filter: "blur(60px)",
+          transition: "left 0.1s, top 0.1s",
+        }}
       />
-
-      <div className="absolute top-8 left-8 z-20">
-         <button
-           onClick={onBack}
-           className="flex items-center gap-2 font-inter text-sm text-[#988ca0] hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none"
-         >
-           <span className="material-symbols-outlined text-[1.1rem]">arrow_back</span>
-           Return to Landing
-         </button>
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[10%] w-[500px] h-[500px] rounded-full bg-[#080cff] opacity-[0.03] filter blur-[100px]" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[440px] px-6">
-         <div className="rounded-3xl border border-white/10 bg-[#0a0a0c]/90 backdrop-blur-3xl shadow-[0_30px_60px_rgba(0,0,0,0.7)] p-8 sm:p-10">
+      {/* Back button */}
+      <div className="absolute top-8 left-8 z-20">
+        <button onClick={onBack} className="flex items-center gap-2 font-inter text-sm text-[#988ca0] hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none">
+          <span className="material-symbols-outlined text-[1.1rem]">arrow_back</span>
+          Return
+        </button>
+      </div>
 
-            {/* Logo / Header */}
-            <div className="flex justify-center mb-6">
-               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#8a2be2] to-[#080cff] flex items-center justify-center shadow-[0_0_25px_rgba(138,43,226,0.4)]">
-                  <span className="material-symbols-outlined text-white text-xl">auto_awesome</span>
-               </div>
+      <div className="relative z-10 w-full max-w-[420px] px-6">
+        <div className="rounded-3xl border border-white/10 bg-[#0a0a0c]/80 backdrop-blur-3xl shadow-[0_30px_60px_rgba(0,0,0,0.6)] p-8 sm:p-10">
+
+          {/* Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8a2be2]/20 to-[#080cff]/20 border border-white/5 flex items-center justify-center shadow-[0_0_20px_rgba(138,43,226,0.2)]">
+              <span className="material-symbols-outlined text-[#dcb8ff]">vpn_key</span>
             </div>
+          </div>
 
-            <h2 className="font-manrope text-white text-center text-3xl font-bold mb-2 tracking-tight">
-              {isSignUp ? "Create Your Vault" : "Welcome Back"}
-            </h2>
-            <p className="font-inter text-[#988ca0] text-center text-sm mb-8">
-              {isSignUp ? "Begin your private financial introspection journey." : "Access your encrypted mirror reflection session."}
-            </p>
+          {/* Tab switcher */}
+          <div className="flex rounded-xl bg-[#131313] border border-white/5 p-1 mb-6">
+            {["signin", "signup"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => { setMode(tab); setError(""); }}
+                className={`flex-1 py-2 rounded-lg font-inter text-sm font-semibold transition-all ${
+                  mode === tab
+                    ? "bg-gradient-to-r from-[#8a2be2] to-[#080cff] text-white shadow-lg"
+                    : "text-[#988ca0] hover:text-white"
+                }`}
+              >
+                {tab === "signin" ? "Sign In" : "Sign Up"}
+              </button>
+            ))}
+          </div>
 
-            {/* Tab Switcher */}
-            <div className="flex bg-[#131313] p-1 rounded-xl mb-8 border border-white/5">
-               <button
-                 type="button"
-                 onClick={() => setIsSignUp(false)}
-                 className={`flex-1 py-2.5 rounded-lg font-inter text-xs font-semibold transition-all ${!isSignUp ? "bg-white/10 text-white shadow" : "text-[#988ca0] hover:text-white"}`}
-               >
-                 Sign In
-               </button>
-               <button
-                 type="button"
-                 onClick={() => setIsSignUp(true)}
-                 className={`flex-1 py-2.5 rounded-lg font-inter text-xs font-semibold transition-all ${isSignUp ? "bg-white/10 text-white shadow" : "text-[#988ca0] hover:text-white"}`}
-               >
-                 Sign Up
-               </button>
+          <h2 className="font-manrope text-white text-center text-2xl font-bold mb-1 tracking-tight">
+            {mode === "signin" ? "Welcome back" : "Create your account"}
+          </h2>
+          <p className="font-inter text-[#988ca0] text-center text-sm mb-6">
+            {mode === "signin"
+              ? "Access your financial mirror securely."
+              : "Your data stays private. No bank credentials stored."}
+          </p>
+
+          {/* Error */}
+          {error && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-inter text-sm">
+              {error}
             </div>
+          )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-               <div>
-                  <label className="block font-inter text-xs font-medium text-[#988ca0] mb-2">Email Address</label>
-                  <input
-                     type="email"
-                     placeholder="name@example.com"
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                     className="w-full bg-[#131313] border border-white/10 rounded-xl px-4 py-3.5 text-white font-inter text-sm focus:outline-none focus:border-[#8a2be2]/60 focus:bg-[#1a1a1a] transition-all placeholder:text-[#4c4354]"
-                     required
-                  />
-               </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            {mode === "signup" && (
+              <input
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-[#131313] border border-white/10 rounded-xl px-4 py-3.5 text-white font-inter text-sm focus:outline-none focus:border-[#8a2be2]/50 focus:bg-[#1a1a1a] transition-all placeholder:text-[#4c4354]"
+              />
+            )}
+            <input
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full bg-[#131313] border border-white/10 rounded-xl px-4 py-3.5 text-white font-inter text-sm focus:outline-none focus:border-[#8a2be2]/50 focus:bg-[#1a1a1a] transition-all placeholder:text-[#4c4354]"
+            />
+            <input
+              type="password"
+              placeholder="Password (min 6 chars)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full bg-[#131313] border border-white/10 rounded-xl px-4 py-3.5 text-white font-inter text-sm focus:outline-none focus:border-[#8a2be2]/50 focus:bg-[#1a1a1a] transition-all placeholder:text-[#4c4354]"
+            />
 
-               <div>
-                  <label className="block font-inter text-xs font-medium text-[#988ca0] mb-2">Password</label>
-                  <input
-                     type="password"
-                     placeholder="••••••••••••"
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     className="w-full bg-[#131313] border border-white/10 rounded-xl px-4 py-3.5 text-white font-inter text-sm focus:outline-none focus:border-[#8a2be2]/60 focus:bg-[#1a1a1a] transition-all placeholder:text-[#4c4354]"
-                     required
-                  />
-               </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full relative group rounded-xl font-manrope font-semibold overflow-hidden shadow-[0_0_20px_rgba(138,43,226,0.2)] hover:shadow-[0_0_30px_rgba(138,43,226,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-1"
+              style={{ padding: "0.875rem 0", color: "#fff" }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-[#8a2be2] to-[#080cff]" />
+              <div className="absolute inset-0 bg-black opacity-20 group-hover:opacity-0 transition-opacity" />
+              <span className="relative z-10 flex items-center justify-center gap-2 tracking-wide">
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    {mode === "signin" ? "Signing in..." : "Creating account..."}
+                  </>
+                ) : (
+                  mode === "signin" ? "Sign In →" : "Create Account →"
+                )}
+              </span>
+            </button>
+          </form>
 
-               <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full relative group rounded-xl font-manrope font-semibold overflow-hidden shadow-[0_0_25px_rgba(138,43,226,0.3)] transition-all hover:shadow-[0_0_35px_rgba(138,43,226,0.5)] disabled:opacity-50 mt-2"
-                  style={{ padding: "0.9rem 0", color: "#fff" }}
-               >
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#8a2be2] to-[#080cff]" />
-                  <div className="absolute inset-0 bg-black opacity-20 group-hover:opacity-0 transition-opacity" />
-                  <span className="relative z-10 flex items-center justify-center gap-2 tracking-wide text-sm font-bold">
-                     {loading ? (
-                        <>
-                           <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                           Authenticating...
-                        </>
-                     ) : (isSignUp ? "Initialize Account" : "Access Reflection")}
-                  </span>
-               </button>
-            </form>
-
-            <div className="flex items-center gap-4 my-6 opacity-60">
-               <div className="h-px bg-white/10 flex-1" />
-               <span className="font-inter text-[#988ca0] text-[0.65rem] font-bold tracking-widest uppercase">Or connect with</span>
-               <div className="h-px bg-white/10 flex-1" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-               <button
-                  type="button"
-                  onClick={onLogin}
-                  className="flex items-center justify-center gap-2 bg-[#131313] border border-white/10 rounded-xl py-3 hover:bg-[#1a1a1a] transition-all group"
-               >
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  <span className="font-inter text-[#e5e2e1] text-xs font-semibold">Google</span>
-               </button>
-
-               <button
-                  type="button"
-                  onClick={onLogin}
-                  className="flex items-center justify-center gap-2 bg-[#131313] border border-white/10 rounded-xl py-3 hover:bg-[#1a1a1a] transition-all group"
-               >
-                  <span className="material-symbols-outlined text-white text-lg group-hover:scale-110 transition-transform">apple</span>
-                  <span className="font-inter text-[#e5e2e1] text-xs font-semibold">Apple</span>
-               </button>
-            </div>
-
-            <p className="font-inter text-[#4c4354] text-[0.7rem] text-center mt-8 leading-relaxed">
-               Zero-knowledge architecture. Ephemeral processing ensures complete cryptographic isolation.
-            </p>
-         </div>
+          <p className="font-inter text-[#4c4354] text-xs text-center mt-6">
+            {mode === "signin" ? "No account? " : "Already have an account? "}
+            <button
+              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); }}
+              className="text-[#dcb8ff] hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+            >
+              {mode === "signin" ? "Create one →" : "Sign in →"}
+            </button>
+          </p>
+          <p className="font-inter text-[#4c4354] text-xs text-center mt-2">
+            Session data is localized. We do not transmit transaction payloads to third parties.
+          </p>
+        </div>
       </div>
     </main>
   );
