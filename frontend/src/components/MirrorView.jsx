@@ -99,7 +99,7 @@ export default function MirrorView({ transactions, metrics, onAddTransactions, o
           <div className="relative z-10">
             <h3 className="font-manrope" style={{ fontSize: "1.375rem", fontWeight: 700, color: "#e5e2e1", display: "flex", justifyContent: "space-between" }}>
               Portfolio Distribution
-              <span className="material-symbols-outlined" style={{ color: "#4c4354", transition: "color 0.3s ease" }} className="group-hover:text-[#dcb8ff] material-symbols-outlined">auto_awesome</span>
+              <span className="material-symbols-outlined group-hover:text-[#dcb8ff]" style={{ color: "#4c4354", transition: "color 0.3s ease" }}>auto_awesome</span>
             </h3>
             <p className="font-inter mt-3" style={{ color: "#cfc2d7", fontSize: "0.9375rem", lineHeight: 1.6, maxWidth: "80%" }}>
               Your wealth is currently heavily weighted in <span style={{ color: "#dcb8ff" }}>Equities</span> and <span style={{ color: "#dcb8ff" }}>Digital Assets</span>. Consider rebalancing into Fixed Income to hedge against volatility.
