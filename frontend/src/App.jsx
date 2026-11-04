@@ -124,13 +124,28 @@ export default function App() {
     }
   }
 
-  async function startSession(nextProfile) {
+  async function startSession(nextProfile, initialTransactions = null) {
     await run(async () => {
       const response = await api.startSession(nextProfile);
       setProfile(nextProfile);
       setSessionId(response.session_id);
       localStorage.setItem("financialMirrorSessionId", response.session_id);
       localStorage.setItem("financialMirrorProfile", JSON.stringify(nextProfile));
+      if (initialTransactions && initialTransactions.length > 0) {
+        const txResponse = await api.addTransactions(response.session_id, initialTransactions);
+        setTransactions(txResponse.transactions);
+        setMetrics(await api.metrics(response.session_id));
+        try {
+          const [p, i, a] = await Promise.all([
+            api.personality(response.session_id),
+            api.insights(response.session_id),
+            api.actions(response.session_id)
+          ]);
+          setPersonality(p);
+          setInsights(i);
+          setActions(a.actions);
+        } catch {}
+      }
       changeStep("app");
     });
   }

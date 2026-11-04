@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { demoTransactions } from "../data/demoTransactions.js";
 
 const initialProfile = {
-  name: "",
-  phone: "",
-  monthly_income: "",
-  financial_goal: "",
+  name: "Alexandra Chen",
+  phone: "+91 98765 43210",
+  monthly_income: "80000",
+  financial_goal: "Build 6-month emergency fund & optimize investments",
 };
 
 export default function OnboardingForm({ onSubmit, loading }) {
@@ -17,14 +18,14 @@ export default function OnboardingForm({ onSubmit, loading }) {
     setProfile((current) => ({ ...current, [field]: value }));
   }
 
-  function submit(event) {
-    event.preventDefault();
+  function submit(event, loadDemo = false) {
+    if (event) event.preventDefault();
     const payload = {
       ...profile,
-      monthly_income: Number(profile.monthly_income),
+      monthly_income: Number(profile.monthly_income) || 80000,
     };
     localStorage.setItem("financialMirrorProfile", JSON.stringify(payload));
-    onSubmit(payload);
+    onSubmit(payload, loadDemo ? demoTransactions : null);
   }
 
   const fields = [
@@ -97,11 +98,18 @@ export default function OnboardingForm({ onSubmit, loading }) {
             ))}
           </div>
 
-          <div className="mt-8 flex items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <button className="btn-primary" disabled={loading}>
-              {loading ? "Initializing session..." : "Begin Analysis →"}
+              {loading ? "Initializing session..." : "Begin Custom Analysis →"}
             </button>
-            <p style={{ fontSize: "0.8125rem", color: "#4c4354" }}>End-to-end encrypted</p>
+            <button
+              type="button"
+              onClick={(e) => submit(e, true)}
+              disabled={loading}
+              className="px-6 py-3 rounded-full font-manrope font-semibold text-sm border border-[#8a2be2]/40 bg-[#8a2be2]/10 text-[#dcb8ff] hover:bg-[#8a2be2]/20 transition-all shadow-[0_0_20px_rgba(138,43,226,0.15)]"
+            >
+              ⚡ Quick Start with Demo Data
+            </button>
           </div>
         </form>
 
