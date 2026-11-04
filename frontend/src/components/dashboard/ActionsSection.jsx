@@ -41,12 +41,14 @@ export default function ActionsSection({ actions, loading, transactions }) {
   }
 
   // ── Real action flip cards ─────────────────────────────────────────────────
-  // Map backend strings → {problem, action} objects for the flip cards
+  // Map backend objects → {problem, action} objects for the flip cards
   const actionCards = hasActions
     ? actions.map((a, i) => {
+        if (typeof a === "object" && a.title) {
+          return { problem: a.title, action: a.action ? `${a.action} (${a.impact || ''})` : (a.impact || "Implement this optimization.") };
+        }
         if (typeof a === "object" && a.problem) return a;
         const str = String(a);
-        // Use first sentence as problem label, rest as action detail
         const dot = str.indexOf('. ');
         const problem = dot !== -1 ? str.slice(0, dot + 1) : str.slice(0, 60) + (str.length > 60 ? '…' : '');
         const action  = dot !== -1 ? str.slice(dot + 2) : str;

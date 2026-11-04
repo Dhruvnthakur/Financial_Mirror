@@ -109,10 +109,10 @@ export default function InsightsSection({ personality, insights, onGenerate, loa
       </motion.div>
 
       {/* Scatter nodes — ONLY when real insights exist */}
-      {hasInsights && insights.insights.map((text, index) => (
+      {hasInsights && insights.insights.map((item, index) => (
         <InsightHoverNode
           key={index}
-          text={text}
+          item={item}
           pos={positions[index % positions.length]}
           delay={index * 0.15}
         />
@@ -121,7 +121,10 @@ export default function InsightsSection({ personality, insights, onGenerate, loa
   );
 }
 
-function InsightHoverNode({ text, pos, delay }) {
+function InsightHoverNode({ item, pos, delay }) {
+  const title = typeof item === 'string' ? 'Insight' : (item.title || 'Insight');
+  const desc = typeof item === 'string' ? item : (item.description || JSON.stringify(item));
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
@@ -143,8 +146,8 @@ function InsightHoverNode({ text, pos, delay }) {
         className={`absolute top-1/2 -translate-y-1/2 ${pos.align === "right" ? "right-full mr-4" : "left-full ml-4"} w-64 p-5 glass-card border-white/15 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-2xl z-50`}
       >
         <div className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#1a1a1a] border-white/15 rotate-45 transform origin-center ${pos.align === "right" ? "-right-2 border-t border-r" : "-left-2 border-l border-b"}`} />
-        <h4 className="text-purple-300 font-manrope font-semibold text-sm uppercase tracking-wider mb-2">Deep Insight</h4>
-        <p className="text-sm text-[#e5e2e1] font-inter leading-relaxed relative z-10">{text}</p>
+        <h4 className="text-purple-300 font-manrope font-semibold text-sm uppercase tracking-wider mb-2">{title}</h4>
+        <p className="text-sm text-[#e5e2e1] font-inter leading-relaxed relative z-10">{desc}</p>
       </div>
     </motion.div>
   );
