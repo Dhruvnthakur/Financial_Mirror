@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8003";
 
 // Simple utility to strip HTML tags from strings before sending (Frontend sanitization layer)
 function sanitizeData(data) {

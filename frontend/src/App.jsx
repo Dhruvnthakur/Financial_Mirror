@@ -27,9 +27,15 @@ export default function App() {
     const savedSessionId = localStorage.getItem("financialMirrorSessionId");
 
     if (token && savedSessionId) {
-      // Try to restore existing session
+      // Try to restore existing session with a 3s timeout
+      const timeout = setTimeout(() => {
+        localStorage.removeItem("financialMirrorSessionId");
+        setStep("landing");
+      }, 3000);
+
       api.getSession(savedSessionId)
         .then((session) => {
+          clearTimeout(timeout);
           setSessionId(savedSessionId);
           setProfile(session.profile || null);
           setTransactions(session.transactions || []);
@@ -42,18 +48,14 @@ export default function App() {
           setStep("app");
         })
         .catch(() => {
-          // Session dead — clear it but keep auth token (user still logged in)
+          clearTimeout(timeout);
           localStorage.removeItem("financialMirrorSessionId");
-          const savedProfile = localStorage.getItem("financialMirrorProfile");
-          if (token && savedProfile) {
-            // Has account but no session → go to onboarding
-            setStep("onboarding");
-          } else {
-            setStep("landing");
-          }
+          localStorage.removeItem("financialMirrorAuthToken");
+          setStep("landing");
         });
+    } else {
+      setStep("landing");
     }
-    // else: no token → stay at "landing"
   }, []);
 
   function changeStep(next) {
