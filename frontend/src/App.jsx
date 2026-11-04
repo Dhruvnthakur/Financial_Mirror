@@ -13,7 +13,7 @@ export default function App() {
   const [step, setStep] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     if (['landing', 'auth', 'onboarding', 'app'].includes(hash)) return hash;
-    return localStorage.getItem("financialMirrorSessionId") ? "app" : "landing";
+    return "landing";
   });
   const [activeTab, setActiveTab] = useState("mirror"); 
   const observerRef = useRef(null);
