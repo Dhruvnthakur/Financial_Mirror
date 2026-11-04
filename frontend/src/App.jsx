@@ -112,15 +112,26 @@ export default function App() {
   }
 
   async function refreshSession(id = sessionId) {
-    const session = await api.getSession(id);
-    setTransactions(session.transactions || []);
-    setProfile(session.profile || profile);
-    if ((session.transactions || []).length > 0) {
-      const latestMetrics = await api.metrics(id);
-      setMetrics(latestMetrics);
-      // Automatically attempt to fetch insight data if trans exist but no insight exists
-      api.personality(id).then(setPersonality).catch(()=>{});
-      api.insights(id).then(setInsights).catch(()=>{});
+    try {
+      const session = await api.getSession(id);
+      setTransactions(session.transactions || []);
+      setProfile(session.profile || profile);
+      if ((session.transactions || []).length > 0) {
+        const [latestMetrics, nextPersonality, nextInsights, nextActions] = await Promise.all([
+          api.metrics(id),
+          api.personality(id).catch(() => null),
+          api.insights(id).catch(() => null),
+          api.actions(id).catch(() => null),
+        ]);
+        setMetrics(latestMetrics);
+        if (nextPersonality) setPersonality(nextPersonality);
+        if (nextInsights) setInsights(nextInsights);
+        if (nextActions?.actions) setActions(nextActions.actions);
+      }
+    } catch (err) {
+      localStorage.removeItem("financialMirrorSessionId");
+      setSessionId("");
+      changeStep("landing");
     }
   }
 
